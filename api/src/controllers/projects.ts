@@ -36,6 +36,7 @@ export const getAllProjects = catchErrors(async (req, res) => {
   const projects = await Project.find(query).populate('users');
   res.respond({
     projects,
+    newProp: 'Yes',
   });
 });
 
