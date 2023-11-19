@@ -73,7 +73,7 @@ const ProjectBoard = ({ currentProject, fetchProject, issueCreateModalOpen }) =>
       {/* // user avatar with breadcrumbs */}
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
         <div style={{display: 'flex', alignItems: 'center'}}>
-          <Breadcrumbs items={['Projects', project.name, 'Kanban Board New Board auto trigger']} />
+          <Breadcrumbs items={['Projects', project.name, 'Kanban Board New Board auto trigger!']} />
           <ActionButton type="button" variant="primary" onClick={issueCreateModalHelpers.open} >
             Create Issue
           </ActionButton>
