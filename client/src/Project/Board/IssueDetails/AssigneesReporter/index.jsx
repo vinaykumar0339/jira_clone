@@ -27,7 +27,7 @@ const ProjectBoardIssueDetailsAssigneesReporter = ({ issue, updateIssue, project
         dropdownWidth={343}
         placeholder="Unassigned"
         name="assignees"
-        value={issue.users.map(user => user._id)}
+        value={issue.users.flatMap(user => getUserById(user._id) ? [user._id] : [])}
         options={userOptions}
         onChange={userIds => {
           updateIssue({ userIds, users: userIds.map(getUserById) });

@@ -23,7 +23,7 @@ const establishDatabaseConnection = async (): Promise<void> => {
 const initializeExpress = (): void => {
   const app = express();
 
-  app.use(cors({ origin: '*', methods: ['GET', 'PUT', 'POST', 'DELETE'] }));
+  app.use(cors({ origin: '*', methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH'] }));
   app.use(express.json());
   app.use(express.urlencoded());
 

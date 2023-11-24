@@ -20,7 +20,22 @@ async function updateUserInProjects(
   userId: mongoose.Types.ObjectId,
 ): Promise<void> {
   for (const project of projects) {
-    project.users.push(userId);
+    if (!project.users.includes(userId)) {
+      project.users.push(userId);
+    }
+    await project.save();
+  }
+}
+
+async function deleteUserInProjects(
+  projects: IProject[],
+  userId: mongoose.Types.ObjectId,
+): Promise<void> {
+  for (const project of projects) {
+    if (project.users.includes(userId)) {
+      const userIndex = project.users.findIndex(user => user === userId);
+      project.users.splice(userIndex, 1);
+    }
     await project.save();
   }
 }
@@ -31,6 +46,57 @@ export const getAllUsers = catchErrors(async (req, res) => {
     users = users.filter(user => user.projects.includes(req.query.projectId));
   }
   res.respond(users);
+});
+
+export const editUser = catchErrors(async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) {
+    throw new CustomError('Please Provide User Id');
+  }
+  const user = await User.findById(userId, '-password');
+  if (!user) {
+    throw new CustomError('User not found');
+  }
+
+  Object.keys(req.body).forEach(key => {
+    (user as any)[key] = req.body[key];
+  });
+
+  const body = {
+    ...req.body,
+  };
+
+  const projectNames = body.projects;
+  if (!projectNames) {
+    throw new BadUserInputError({ project: 'Project not provided' });
+  }
+  const projects = await Project.find({ name: { $in: projectNames } });
+  const foundProjectNames = projects.map(project => project.name);
+
+  // Check if all requested projects are found
+  const missingProjects = projectNames.filter((name: string) => !foundProjectNames.includes(name));
+
+  if (missingProjects.length > 0) {
+    // Throw an error for missing projects
+    throw new CustomError(
+      `The following projects are not available: ${missingProjects.join(', ')}`,
+    );
+  }
+
+  user.projects = projects.map(project => project._id);
+
+  updateUserInProjects(projects, user._id);
+
+  const userInProjects = (await Project.find({ users: userId })).filter(
+    proj => !user.projects.includes(proj._id),
+  );
+
+  deleteUserInProjects(userInProjects, user._id);
+
+  await user.save();
+  res.send({
+    user,
+  });
 });
 
 export const deleteUser = catchErrors(async (req, res) => {

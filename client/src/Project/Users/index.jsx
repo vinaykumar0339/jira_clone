@@ -2,16 +2,21 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-underscore-dangle */
 import { ActionButton } from 'Project/UserCreate/Styles';
-import React from 'react'
-import { Avatar, ConfirmModal, PageError, PageLoader } from 'shared/components';
+import UserEdit from 'Project/UserEdit';
+import React, { useState } from 'react'
+import { Avatar, ConfirmModal, Modal, PageError, PageLoader } from 'shared/components';
 import useApi from 'shared/hooks/api';
 import useCurrentUser from 'shared/hooks/currentUser';
 import api from 'shared/utils/api';
+import { createQueryParamModalHelpers } from 'shared/utils/queryParamModal';
 import toast from 'shared/utils/toast';
 
-function Users({ fetchProject }) {
+function Users({ fetchProject, projects }) {
+  const [editingUser, setEditingUser] = useState();
   const [{ data, error }, fetchUsers] = useApi.get('/users');
   const { currentUser } = useCurrentUser();
+
+  const editUserModalHelpers = createQueryParamModalHelpers('edit-user');
 
   const handleDeleteUser = async (user, modal) => {
     try {
@@ -72,6 +77,10 @@ function Users({ fetchProject }) {
           <div>
             <ActionButton
               variant='primary'
+              onClick={() => {
+                setEditingUser(user);
+                editUserModalHelpers.open();
+              }}
             >
               Edit
             </ActionButton>
@@ -91,6 +100,18 @@ function Users({ fetchProject }) {
           </div>
         </div>
       ))}
+      {editingUser && editUserModalHelpers.isOpen() && (
+        <Modal
+          isOpen
+          testid="modal:edit-user"
+          width={600}
+          onClose={() => {
+            setEditingUser(null);
+            editUserModalHelpers.close();
+          }}
+          renderContent={(modal) => <UserEdit allProjects={projects} user={editingUser} modalClose={modal.close} fetchProject={fetchProject} onEdit={editUserModalHelpers.close} />}
+        />
+      )}
     </div>
   )
 }

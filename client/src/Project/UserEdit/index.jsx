@@ -15,12 +15,11 @@ import {
   Actions,
   ActionButton,
 } from './Styles';
+import useCurrentUser from 'shared/hooks/currentUser';
 
 const propTypes = {
-  projects: PropTypes.array.isRequired,
-  project: PropTypes.object.isRequired,
   fetchProject: PropTypes.func.isRequired,
-  onCreate: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
   modalClose: PropTypes.func.isRequired,
 };
 
@@ -38,47 +37,41 @@ const renderOption = ({ value, removeOptionValue }) => {
     );
   };
 
-const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) => {
-  const [{ isCreating }, createUser] = useApi.post(`/user/create`);
-
+const UserEdit = ({ user, allProjects, fetchProject, onEdit, modalClose }) => {
+  const [{ isCreating }, editUser] = useApi.patch(`/users/${user._id}`);
+  const { currentUser } = useCurrentUser();
 
   return (
     <Form
       enableReinitialize
-      initialValues={{
-        name: '',
-        email: '',
-        isAdmin: false,
-        projects: '',
-        password: '',
-        confirmPassword: '',
-      }}
+      initialValues={Form.initialValues(user, get => ({
+        name: get('name'),
+        email: get('email'),
+        isAdmin: get('isAdmin'),
+        projects: get('projects').map(proj => proj.name),
+      }))}
       validations={{
         name: Form.is.required(),
         email: [Form.is.required(), Form.is.email()],
         isAdmin: [Form.is.required()],
         projects: [Form.is.required()],
-        password: Form.is.required(),
-        confirmPassword: [Form.is.required(), Form.is.match((value, fieldvalues) => {
-            return value === fieldvalues.password
-        }, "Confirm Password Should Match With Password")],
       }}
       onSubmit={async (values, form) => {
         try {
             console.log(values, form)
-            await createUser({
+            await editUser({
               ...values,
             });
             await fetchProject();
             toast.success(`User ${values.name} has been successfully created.`);
-            onCreate();
+            onEdit();
         } catch (error) {
           Form.handleAPIError(error, form);
         }
       }}
     >
       <FormElement>
-        <FormHeading>Create User</FormHeading>
+        <FormHeading>Edit User</FormHeading>
         <Divider />
         <Form.Field.Input
           name="name"
@@ -86,40 +79,31 @@ const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) =
           placeholder="Enter Your Name"
         />
         <Form.Field.Input
+          disabled
           name="email"
           label="Enter Email"
           placeholder="Enter Your Email"
         />
-        <Form.Field.Select
-          name="isAdmin"
-          label="Is Admin"
-          options={[{value: true, label: true}, {value: false, label: false}]}
-          renderOption={renderOption}
-          renderValue={renderOption}
-        />
+        {currentUser && currentUser.isAdmin && (
+          <Form.Field.Select
+            name="isAdmin"
+            label="Is Admin"
+            options={[{value: true, label: true}, {value: false, label: false}]}
+            renderOption={renderOption}
+            renderValue={renderOption}
+          />
+        )}
         <Form.Field.Select
           name="projects"
           label="Projects"
           isMulti
-          options={projects.map(proj => ({value: proj.name, label: proj._id}))}
+          options={allProjects.map(proj => ({value: proj.name, label: proj._id}))}
           renderOption={renderOption}
           renderValue={renderOption}
         />
-        <Form.Field.Input
-          name="password"
-          label="Enter Password"
-          placeholder="Enter Your Password"
-          type="password"
-        />
-        <Form.Field.Input
-          name="confirmPassword"
-          label="Enter Confirm Password"
-          placeholder="Enter Your Confirm Password"
-          type="password"
-        />
         <Actions>
           <ActionButton type="submit" variant="primary" isWorking={isCreating}>
-            Create User
+            Edit User
           </ActionButton>
           <ActionButton type="button" variant="empty" onClick={modalClose}>
             Cancel
@@ -130,6 +114,6 @@ const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) =
   );
 };
 
-UserCreate.propTypes = propTypes;
+UserEdit.propTypes = propTypes;
 
-export default UserCreate;
+export default UserEdit;
