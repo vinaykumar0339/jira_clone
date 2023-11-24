@@ -6,6 +6,7 @@ import api from 'shared/utils/api';
 import toast from 'shared/utils/toast';
 import { formatDateTimeConversational } from 'shared/utils/dateTime';
 import { ConfirmModal, TextEditedContent } from 'shared/components';
+import useCurrentUser from 'shared/hooks/currentUser';
 
 import BodyForm from '../BodyForm';
 import {
@@ -27,6 +28,8 @@ const ProjectBoardIssueDetailsComment = ({ comment, fetchIssue }) => {
   const [isFormOpen, setFormOpen] = useState(false);
   const [isUpdating, setUpdating] = useState(false);
   const [body, setBody] = useState(comment.body);
+
+  const { currentUser } = useCurrentUser();
 
   const handleCommentDelete = async () => {
     try {
@@ -67,18 +70,24 @@ const ProjectBoardIssueDetailsComment = ({ comment, fetchIssue }) => {
         ) : (
           <Fragment>
             <TextEditedContent content={comment.body} onClick={(event) => {
+              if (currentUser && currentUser._id !== comment.user._id) return;
               if (event.target.tagName !== 'A') {
                 setFormOpen(true)
               }
             }} />
-            <EditLink onClick={() => setFormOpen(true)}>Edit</EditLink>
-            <ConfirmModal
-              title="Are you sure you want to delete this comment?"
-              message="Once you delete, it's gone for good."
-              confirmText="Delete comment"
-              onConfirm={handleCommentDelete}
-              renderLink={modal => <DeleteLink onClick={modal.open}>Delete</DeleteLink>}
-            />
+            {currentUser && currentUser._id === comment.user._id && (
+                <Fragment>
+                  <EditLink onClick={() => setFormOpen(true)}>Edit</EditLink>
+                  <ConfirmModal
+                      title="Are you sure you want to delete this comment?"
+                      message="Once you delete, it's gone for good."
+                      confirmText="Delete comment"
+                      onConfirm={handleCommentDelete}
+                      renderLink={modal => <DeleteLink onClick={modal.open}>Delete</DeleteLink>}
+                  />
+                </Fragment>
+            )}
+            
           </Fragment>
         )}
       </Content>

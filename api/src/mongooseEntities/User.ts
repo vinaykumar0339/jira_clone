@@ -53,10 +53,12 @@ const UserSchema: Schema = new Schema(
         ref: 'Issue',
       },
     ],
-    project: {
-      type: mongoose.Types.ObjectId,
-      ref: 'Project',
-    },
+    project: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: 'Project',
+      },
+    ],
   },
   {
     timestamps: true,
