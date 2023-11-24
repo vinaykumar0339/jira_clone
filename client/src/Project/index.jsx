@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Route, Redirect, useRouteMatch, useHistory } from 'react-router-dom';
 
 import useApi from 'shared/hooks/api';
@@ -25,6 +25,7 @@ const Project = () => {
   const history = useHistory();
   const { currentUser } = useCurrentUser();
   const [currentProject, setCurrentProject] = useState();
+  const boardRef = useRef();
 
   const issueSearchModalHelpers = createQueryParamModalHelpers('issue-search');
   const userCreateModalHelpers = createQueryParamModalHelpers('user-create');
@@ -94,7 +95,12 @@ const Project = () => {
               <UserCreate
                 projects={projects}
                 project={currentProject}
-                fetchProject={fetchProject}
+                fetchProject={(...args) => {
+                  if (boardRef.current.fetchCurrentProject) {
+                    boardRef.current.fetchCurrentProject();
+                  }
+                  fetchProject(...args)
+                }}
                 onCreate={() => history.push(`${match.url}/board`)}
                 modalClose={modal.close}
               />
@@ -125,6 +131,7 @@ const Project = () => {
           path={`${match.path}/board`}
           render={() => (
             <Board
+              ref={boardRef}
               currentProject={currentProject}
               fetchProject={fetchProject}
               updateLocalProjectIssues={updateLocalProjectIssues}

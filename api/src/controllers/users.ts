@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
 import { BadUserInputError, CustomError, catchErrors } from 'errors';
-import { Project, User, Comment } from 'mongooseEntities';
+import { Project, User, Comment, IProject } from 'mongooseEntities';
 import { signToken } from 'utils/authToken';
 import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
 
 const hashPassword = async (password: string, saltRounds: number): Promise<string> => {
   const hash = await bcrypt.hash(password, saltRounds);
@@ -14,10 +15,20 @@ const checkPassword = async (password: string, hash: string): Promise<boolean> =
   return match;
 };
 
+async function updateUserInProjects(
+  projects: IProject[],
+  userId: mongoose.Types.ObjectId,
+): Promise<void> {
+  for (const project of projects) {
+    project.users.push(userId);
+    await project.save();
+  }
+}
+
 export const getAllUsers = catchErrors(async (req, res) => {
-  let users = await User.find({}, '-password').populate('project');
+  let users = await User.find({}, '-password').populate('projects');
   if (req.query.projectId) {
-    users = users.filter(user => user.project === req.query.projectId);
+    users = users.filter(user => user.projects.includes(req.query.projectId));
   }
   res.respond(users);
 });
@@ -45,20 +56,30 @@ export const create = catchErrors(async (req, res) => {
     ...req.body,
     password,
   };
-  const projectName = body.project;
-  if (!projectName) {
+  const projectNames = body.projects;
+  if (!projectNames) {
     throw new BadUserInputError({ project: 'Project not provided' });
   }
-  const project = await Project.findOne({ name: projectName });
-  if (!project) {
-    throw new BadUserInputError({ project: 'project not found' });
+  const projects = await Project.find({ name: { $in: projectNames } });
+  const foundProjectNames = projects.map(project => project.name);
+
+  // Check if all requested projects are found
+  const missingProjects = projectNames.filter((name: string) => !foundProjectNames.includes(name));
+
+  if (missingProjects.length > 0) {
+    // Throw an error for missing projects
+    throw new CustomError(
+      `The following projects are not available: ${missingProjects.join(', ')}`,
+    );
   }
-  body.project = project._id;
+
+  body.projects = projects.map(project => project._id);
+
   const user = new User(body);
   await user.save();
-  if (project) {
-    project.users.push(user._id);
-    await project.save();
+
+  if (projects) {
+    await updateUserInProjects(projects, user._id);
   }
   res.respond({ user });
 });

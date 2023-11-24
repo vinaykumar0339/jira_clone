@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Route, useRouteMatch, useHistory } from 'react-router-dom';
 
@@ -33,7 +33,7 @@ const defaultFilters = {
   recent: false,
 };
 
-const ProjectBoard = ({ currentProject, fetchProject, issueCreateModalOpen }) => {
+const ProjectBoard = forwardRef(({ currentProject, fetchProject, issueCreateModalOpen }, ref) => {
   const match = useRouteMatch();
   const history = useHistory();
   const { currentUser } = useCurrentUser();
@@ -41,6 +41,12 @@ const ProjectBoard = ({ currentProject, fetchProject, issueCreateModalOpen }) =>
   const issueCreateModalHelpers = createQueryParamModalHelpers('issue-create');
 
   const [{ data: projectData, error, setLocalData }, fetchCurrentProject] = useApi.get(`/project/${currentProject._id}`, {projectId: currentProject._id});
+
+  useImperativeHandle(ref, () => {
+    return {
+      fetchCurrentProject
+    }
+  }, [fetchCurrentProject]);
 
   useEffect(() => {
     fetchCurrentProject();
@@ -136,7 +142,7 @@ const ProjectBoard = ({ currentProject, fetchProject, issueCreateModalOpen }) =>
       )}
     </Fragment>
   );
-};
+});
 
 ProjectBoard.propTypes = propTypes;
 

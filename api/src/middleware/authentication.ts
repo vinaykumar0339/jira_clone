@@ -13,7 +13,7 @@ export const authenticateUser = catchErrors(async (req, _res, next) => {
   if (!userId) {
     throw new InvalidTokenError('Authentication token is invalid.');
   }
-  const user = await User.findById(userId, '-password').populate('project');
+  const user = await User.findById(userId, '-password').populate('projects');
   if (!user) {
     throw new InvalidTokenError('Authentication token is invalid: User not found.');
   }

@@ -49,14 +49,14 @@ const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) =
         name: '',
         email: '',
         isAdmin: false,
-        project: '',
+        projects: '',
         password: '',
         confirmPassword: '',
       }}
       validations={{
         name: Form.is.required(),
         email: [Form.is.required(), Form.is.email()],
-        project: [Form.is.required()],
+        projects: [Form.is.required()],
         password: Form.is.required(),
         confirmPassword: [Form.is.required(), Form.is.match((value, fieldvalues) => {
             return value === fieldvalues.password
@@ -65,12 +65,12 @@ const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) =
       onSubmit={async (values, form) => {
         try {
             console.log(values, form)
-          await createUser({
-            ...values,
-          });
-          await fetchProject();
-          toast.success(`User ${values.name} has been successfully created.`);
-          onCreate();
+            await createUser({
+              ...values,
+            });
+            await fetchProject();
+            toast.success(`User ${values.name} has been successfully created.`);
+            onCreate();
         } catch (error) {
           Form.handleAPIError(error, form);
         }
@@ -97,8 +97,9 @@ const UserCreate = ({ projects, project, fetchProject, onCreate, modalClose }) =
           renderValue={renderOption}
         />
         <Form.Field.Select
-          name="project"
-          label="Project"
+          name="projects"
+          label="Projects"
+          isMulti
           options={projects.map(proj => ({value: proj.name, label: proj._id}))}
           renderOption={renderOption}
           renderValue={renderOption}
